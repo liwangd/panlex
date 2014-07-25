@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
 
-  "name": "PanLex Translator Demo",
-  "description": "This extension demonstrates a universal translator by using PanLex",
+  "name": "PanLex Translator",
+  "description": "This extension demonstrates a universal translator by using PanLex Database",
   "version": "0.33",
   "options_page": "options_all.html",
 
