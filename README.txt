@@ -1,23 +1,27 @@
 Introduction
 ------------
 This Google Chrome Browser extension demonstrates the inter/intra-lingual 
-translation functionalities of PanLex (http://panlex.org/), a project aims to 
-help express any lexical concept, developed by The Long Now Foundation 
-(http://longnow.org/).  PanLex are consulting thousands of dictionaries and 
-other knowledge sources to build an open-source database. The database already 
-documents a billion lexical translations, from which billions more can be 
-derived. This extension is built upon this database, by using its public API 
-(http://api.panlex.org).
+translation functionalities of PanLex (http://panlex.org/), a project of The 
+Long Now Foundation (http://longnow.org/). The PanLex open-source database 
+aims to document all known lexical translations and thereby to help users 
+express any lexical concept in any language.  PanLex editors are consulting 
+thousands of dictionaries and other knowledge sources to build the database, 
+which already documents a billion lexical translations, from which billions 
+more can be derived. This extension is built upon this database, by using its 
+public API (http://api.panlex.org).
 
 Features
 --------
-- When installed in Google Chrome, provide translations between 9231 languages, 
-  by selecting words/phrases on webpages.
-- Information about supported 9231 languages can be found at www.askjonathanpool.com
+- When installed in Google Chrome, provide translations between 9231 
+  languages, by selecting words/phrases on webpages.
+- More detailed information about the supported languages, the knowledge 
+  sources consulted, and the available data can be found at 
+  http://panlex.org/try.
 - Provide the option to automatically identify the source language of the 
-  selected content. This automatic language identification supports 97 languages
-  as described at https://github.com/saffsd/langid.py
-- To install this extension, please visit www.googlechromeextensionstore.com
+  selected content. This automatic language identification supports 97 
+  languages as described at https://github.com/saffsd/langid.py
+- To install this extension, please visit 
+  https://chrome.google.com/webstore/category/extensions.
 
 Acknowledgement
 ---------------
