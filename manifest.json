@@ -2,8 +2,8 @@
   "manifest_version": 2,
 
   "name": "PanLex Translator",
-  "description": "This extension demonstrates a universal translator by using PanLex Database",
-  "version": "0.34",
+  "description": "View translations of words from any language to any language",
+  "version": "1.0.0",
   "options_page": "options_all.html",
 
 
