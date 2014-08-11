@@ -3,7 +3,7 @@
 
   "name": "PanLex Translator",
   "description": "This extension demonstrates a universal translator by using PanLex Database",
-  "version": "0.33",
+  "version": "0.34",
   "options_page": "options_all.html",
 
 
