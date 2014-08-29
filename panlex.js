@@ -13,6 +13,18 @@ function compare(a,b) {
     return 0;
 }
 
+// http://stackoverflow.com/a/9229821
+function uniq(ary) {
+    var prim = {"boolean":{}, "number":{}, "string":{}}, obj = [];
+
+    return ary.filter(function(x) {
+        var t = typeof x;
+        return (t in prim) ?
+            !prim[t][x] && (prim[t][x] = 1) :
+            obj.indexOf(x) < 0 && obj.push(x);
+    });
+}
+
 function appendContent(div, words, wordsID, rstDict, index) {
 
     var textRequest = document.createElement("b");
@@ -25,7 +37,8 @@ function appendContent(div, words, wordsID, rstDict, index) {
     rstShow.sort(compare);
 
     var translates = "";
-    for (var i = 0; i < rstShow.length; i++)
+    var maxNum = rstShow.length>7 ? 7 : rstShow.length;
+    for (var i = 0; i < maxNum; i++)
     {
         translates = translates + rstShow[i]["tt"];
         translates = translates + ", ";
@@ -36,6 +49,7 @@ function appendContent(div, words, wordsID, rstDict, index) {
 }
 
 function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
+    closePopup("panlex_result_div");
     //console.log(JSON.stringify(wordsWithVar));
     //console.log(JSON.stringify(wordsID));
     var div = document.createElement("div");
@@ -142,9 +156,62 @@ function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
         divJQ.css('left', wW - divW - 20);
     }
 
+//    divJQ.css('width', 600);
+
+    console.log(divT);
+    console.log(wH);
+
     if (divT + divH > wH) {
-        divJQ.css('top', y - 25 - divH);
+        if (divT > wH/2) {
+            divJQ.css('top', y - 25 - divH);
+       }
     }
+
+    console.log(y - 25 - divH);
+
+    if (divT > wH/2) {
+        var flag = 1;
+        while((y-$(window).scrollTop()-25-divJQ.height()) < 10 && divJQ.width() < wW/2 && flag ===1) {
+            if (divJQ.position().left - $(window).scrollLeft() + divJQ.width() < wW - 65) {
+                divJQ.css('width', divJQ.width() + 40);
+            }
+            else if (divJQ.position().left - $(window).scrollLeft() > 45) {
+                divJQ.css('left', divJQ.position().left - 40);
+                divJQ.css('width', divJQ.width() + 40);
+            }
+            else {
+                flag = 0;
+            }
+            if (divH === divJQ.height()) {
+                flag = 0;
+            }
+            divH = divJQ.height();
+        }
+
+        divJQ.css('top', y - 25 - divJQ.height());
+    }
+
+    else {
+        var flag = 1;
+        while((divJQ.position().top - $(window).scrollTop() + divJQ.height()) + 10> wH && divJQ.width() < wW/2 && flag === 1) {
+            if (divJQ.position().left - $(window).scrollLeft() + divJQ.width() < wW - 65) {
+                divJQ.css('width', divJQ.width() + 40);
+            }
+            else if (divJQ.position().left - $(window).scrollLeft() > 45) {
+                divJQ.css('left', divJQ.position().left - 40);
+                divJQ.css('width', divJQ.width() + 40);
+            }
+            else {
+                flag = 0;
+            }
+            if (divH === divJQ.height()) {
+                flag = 0;
+            }
+            divH = divJQ.height();
+        }
+    }
+
+
 
     $('a').click(function(){
         closePopup("panlex_result_div");
@@ -205,6 +272,13 @@ function showResult(request, result_json, x, y) {
         div.appendChild(document.createTextNode(translates));
 
     }
+    else if(request.length >= 30) {
+        div.removeChild(div.childNodes[0]);
+        div.removeChild(div.childNodes[0]);
+        var text = document.createTextNode("PanLex: Please select shorter text.")
+        div.appendChild(text);
+    }
+
     else {
         var text = document.createTextNode("Translation not available.")
         div.appendChild(text);
@@ -231,6 +305,17 @@ function showResult(request, result_json, x, y) {
     if (divT + divH > wH) {
         divJQ.css('top', y - 25 - divH);
     }
+
+
+    if (request.length >= 30) {
+        setTimeout(function () {
+            var lk_div = document.getElementById("panlex_result_div");
+            if (lk_div) {
+                document.body.removeChild(lk_div);
+            }
+        }, 2000);
+    }
+
 }
 
 
@@ -240,10 +325,12 @@ var getOptions = function() {
         if (data.language) {
             myVar.setVar("langSrc", data.language.languageSrc);
             myVar.setVar("langDst", data.language.languageDst);
+          myVar.setVar("triggerKey", data.language.triggerKey);
         }
         else {
-            myVar.setVar("langSrc", "eng-000");
-            myVar.setVar("langDst", "cmn-000");
+            myVar.setVar("langSrc", "auto-000");
+            myVar.setVar("langDst", "eng-000");
+          myVar.setVar("triggerKey", "none");
         }
     });
 };
@@ -304,7 +391,7 @@ var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWi
                         data: JSON.stringify({"uid": [langDst], "tr": allIDs, "include": ["trq"]}),
                         success: function (responseText2, status2, xhr2) {
                             if (xhr2["status"] != 200 || status2 != "success") {
-                                window.alert("API query failed with status: " + JSON.stringify(xhr2["status"]) + " and status: " + status2);
+                                console.log("API query failed with status: " + JSON.stringify(xhr2["status"]) + " and status: " + status2);
                             }
                             showResultsUnified(wordsWithVar, rwordsID, responseText2, event.pageX, event.pageY, langSrc);
                         },
@@ -313,18 +400,18 @@ var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWi
                 }
                 else {
                     //console.log("request.length < 30");
-                    if (request.length < 30) {
+                    //if (request.length < 30) {
                         showResult(requestOrig, {}, event.pageX, event.pageY);
-                    }
+                    //}
                 }
             },
             error: function(exhr, estatus, ethrown){
                 event.counter -= 1;
                 setTimeout(function() {
-                    //ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig, count)
+                        //ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig, count)
                         listener(event);
                     },
-                   1000
+                    1000
                 );
             },
             async: true}
@@ -342,99 +429,107 @@ var listener = function (event) {
     getOptions();
 
     if (event.button == 0) {
-        //console.log(event.target.toString());
-        //console.log(event.currentTarget.toString());
+      //console.log(event.target.toString());
+      //console.log(event.currentTarget.toString());
 
-        var lk_div = document.getElementById("panlex_result_div");
-        if (lk_div) {
-            document.body.removeChild(lk_div);
-        }
+      var lk_div = document.getElementById("panlex_result_div");
+      if (lk_div) {
+        document.body.removeChild(lk_div);
+      }
 
-        var parent_popup = window.parent.document.getElementById("panlex_result_div");
-        if (parent_popup) {
-            window.parent.document.body.removeChild(parent_popup);
-        }
+      var parent_popup = window.parent.document.getElementById("panlex_result_div");
+      if (parent_popup) {
+        window.parent.document.body.removeChild(parent_popup);
+      }
+
+      if (myVar.getVar("triggerKey") === "none" || (myVar.getVar("triggerKey") === "alt" && event.altKey)) {
 
         var sel = window.getSelection();
-        var selRange = sel.rangeCount ? sel.getRangeAt(0): null;
+        var selRange = sel.rangeCount ? sel.getRangeAt(0) : null;
 
 
         if (selRange && !selRange.collapsed) {
-            var contextRange = document.createRange();
-            var node = selRange.startContainer;
-            while (node.nodeType != 1) node = node.parentNode;
-            contextRange.setStartBefore(node);
+          var contextRange = document.createRange();
+          var node = selRange.startContainer;
+          while (node.nodeType != 1) node = node.parentNode;
+          contextRange.setStartBefore(node);
 
-            node = selRange.endContainer;
-            while (node.nodeType != 1) node = node.parentNode;
-            contextRange.setEndAfter(node);
+          node = selRange.endContainer;
+          while (node.nodeType != 1) node = node.parentNode;
+          contextRange.setEndAfter(node);
 
-            var requestt = selRange.toString();
+          var requestt = selRange.toString();
 
-            var request = preprocessText(requestt);
+          var request = preprocessText(requestt);
 
-            if (request.length < 30) {
-                if (myVar.getVar("langSrc") === "auto-000") {
-                    myVar.setVar("flag_auto", true);
-                    var langPred = langid.identify($(event.target).text());
-                    myVar.setVar("langSrc", langCodeMap[langPred]);
-                }
-                else {
-                    myVar.setVar("flag_auto", false);
-                }
+          if (request.length < 30) {
+            if (myVar.getVar("langSrc") === "auto-000") {
+              myVar.setVar("flag_auto", true);
+              var langPred = langid.identify($(event.target).text());
+              myVar.setVar("langSrc", langCodeMap[langPred]);
+            }
+            else {
+              myVar.setVar("flag_auto", false);
+            }
 
-                request = request.trim();
-                request = request.replace(/\s+/g, " ");
-                var requestOrig = request;
-                var rwordsOrig = request.split(" ");
-                request = request.toLowerCase();
-                var rwords = request.split(" ");
+            request = request.trim();
+            request = request.replace(/\s+/g, " ");
+            var requestOrig = request;
+            var rwordsOrig = request.split(" ");
+            request = request.toLowerCase();
+            var rwords = request.split(" ");
 
-                var wordsToTranslate = [];
-                var wordsWithVar = [];
-                for (var i = 0; i < rwordsOrig.length; i++) {
-                    var oneWord = rwordsOrig[i];
-                    var variation = [oneWord];
-                    if (oneWord != oneWord.toLowerCase()) {
-                        variation.push(oneWord.toLowerCase());
-                    }
+            var wordsToTranslate = [];
+            var wordsWithVar = [];
+            for (var i = 0; i < rwordsOrig.length; i++) {
+              var oneWord = rwordsOrig[i];
+              var variation = [oneWord];
+              if (oneWord !== oneWord.toLowerCase()) {
+                variation.push(oneWord.toLowerCase());
+              }
 
-                    variation.push.apply(variation, lemmatizerEnglish.lemmatize(oneWord.toLowerCase(), null));
-                    wordsToTranslate.push.apply(wordsToTranslate, variation);
-                    wordsWithVar.push(variation);
-                }
+              variation.push.apply(variation, lemmatizerEnglish.lemmatize(oneWord.toLowerCase(), null));
 
-                if (wordsWithVar.length != 1) {
-                    wordsToTranslate.push(requestOrig);
-                    if (requestOrig == requestOrig.toLowerCase()) {
-                        wordsWithVar.unshift([requestOrig]);
-                    }
-                    else {
-                        wordsWithVar.unshift([requestOrig, requestOrig.toLowerCase()]);
-                        wordsToTranslate.push(requestOrig.toLocaleLowerCase());
-                    }
+              variation = uniq(variation);
+              wordsToTranslate.push.apply(wordsToTranslate, variation);
+              wordsWithVar.push(variation);
+            }
 
-                }
-
-
-                if (rwords.length > 1) {
-                    rwords.unshift(request);
-                    rwords.unshift(requestOrig);
-                }
-                if (rwords.length == 1) {
-                    if (rwordsOrig[0] != rwords[0]) {
-                        rwords.unshift(requestOrig);
-                        rwords.unshift("liwang"); // dummy value
-                    }
-                }
-
-                var langSrc = myVar.getVar("langSrc");
-                var langDst = myVar.getVar("langDst");
-                ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
-
+            if (wordsWithVar.length != 1) {
+              wordsToTranslate.push(requestOrig);
+              if (requestOrig == requestOrig.toLowerCase()) {
+                wordsWithVar.unshift([requestOrig]);
+              }
+              else {
+                wordsWithVar.unshift([requestOrig, requestOrig.toLowerCase()]);
+                wordsToTranslate.push(requestOrig.toLocaleLowerCase());
+              }
 
             }
+
+
+            if (rwords.length > 1) {
+              rwords.unshift(request);
+              rwords.unshift(requestOrig);
+            }
+            if (rwords.length == 1) {
+              if (rwordsOrig[0] != rwords[0]) {
+                rwords.unshift(requestOrig);
+                rwords.unshift("liwang"); // dummy value
+              }
+            }
+
+            var langSrc = myVar.getVar("langSrc");
+            var langDst = myVar.getVar("langDst");
+            console.log(wordsToTranslate);
+            console.log(wordsWithVar);
+            ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
+          }
+          else {
+            showResult(request, {}, event.pageX, event.pageY);
+          }
         }
+      }
     }
 };
 
