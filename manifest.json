@@ -3,7 +3,7 @@
 
   "name": "PanLex Translator",
   "description": "View translations of words from any language to any language",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "options_page": "options_all.html",
 
 
