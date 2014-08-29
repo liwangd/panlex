@@ -158,8 +158,8 @@ function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
 
 //    divJQ.css('width', 600);
 
-    console.log(divT);
-    console.log(wH);
+    //console.log(divT);
+    //console.log(wH);
 
     if (divT + divH > wH) {
         if (divT > wH/2) {
@@ -167,7 +167,7 @@ function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
        }
     }
 
-    console.log(y - 25 - divH);
+    //console.log(y - 25 - divH);
 
     if (divT > wH/2) {
         var flag = 1;
@@ -521,8 +521,8 @@ var listener = function (event) {
 
             var langSrc = myVar.getVar("langSrc");
             var langDst = myVar.getVar("langDst");
-            console.log(wordsToTranslate);
-            console.log(wordsWithVar);
+            //console.log(wordsToTranslate);
+            //console.log(wordsWithVar);
             ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
           }
           else {

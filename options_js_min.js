@@ -9,7 +9,7 @@
 		a.languageDst = g.options[g.selectedIndex].value;
     a.triggerKey = trigger.options[trigger.selectedIndex].value;
 		a.enableHttps = "true";
-    console.log(a);
+    //console.log(a);
 //		window.localStorage.options = JSON.stringify(a);
         chrome.storage.sync.set({language: a});
 		var b = document.getElementById("save_status");
