@@ -3,6 +3,7 @@
  * Li Wang <li@liwang.info>, July 2014
  */
 
+console.log = function() {}
 myVar.setVar("flag_auto", false);
 
 function compare(a,b) {
@@ -50,8 +51,9 @@ function appendContent(div, words, wordsID, rstDict, index) {
 
 function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
     closePopup("panlex_result_div");
-    //console.log(JSON.stringify(wordsWithVar));
-    //console.log(JSON.stringify(wordsID));
+    console.log(JSON.stringify(wordsWithVar));
+    console.log(JSON.stringify(wordsID));
+    console.log(JSON.stringify(result_json));
     var div = document.createElement("div");
     div.id = "panlex_result_div";
     with (div.style) {
@@ -364,7 +366,7 @@ var closePopupParent = function (popupId) {
 }
 
 var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig) {
-
+    console.log(JSON.stringify({ "uid": [langSrc], "tt": wordsToTranslate}));
     if (event.counter === 0) return;
     jQuery.ajax({
             type: "POST",
@@ -375,7 +377,7 @@ var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWi
                     window.alert("API query failed with status: " + JSON.stringify(xhr["status"]) + " and status: " + status);
                 }
 
-                //console.log(JSON.stringify(responseText));
+                console.log(JSON.stringify(responseText));
 
                 var results = responseText["result"]
                 var rwordsID = {};
@@ -384,11 +386,12 @@ var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWi
                     rwordsID[results[i]["tt"]] = results[i]["ex"];
                     allIDs.push(results[i]["ex"]);
                 }
+                console.log(JSON.stringify({"uid": [langDst], "trex": allIDs, "include": ["trq"]}));
                 if (JSON.stringify(results) != "[]") {
                     jQuery.ajax({
                         type: "POST",
                         url: "http://api.panlex.org/ex",
-                        data: JSON.stringify({"uid": [langDst], "tr": allIDs, "include": ["trq"]}),
+                        data: JSON.stringify({"uid": [langDst], "trex": allIDs, "include": ["trq"]}),
                         success: function (responseText2, status2, xhr2) {
                             if (xhr2["status"] != 200 || status2 != "success") {
                                 console.log("API query failed with status: " + JSON.stringify(xhr2["status"]) + " and status: " + status2);
@@ -521,8 +524,8 @@ var listener = function (event) {
 
             var langSrc = myVar.getVar("langSrc");
             var langDst = myVar.getVar("langDst");
-            //console.log(wordsToTranslate);
-            //console.log(wordsWithVar);
+            console.log(wordsToTranslate);
+            console.log(wordsWithVar);
             ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
           }
           else {
