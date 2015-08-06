@@ -88,12 +88,14 @@ function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
 
   var br;
   var flag;
+  var span;
   if (results.length == 0 || results.length == undefined) {
     var textRequest = document.createElement("b");
     textRequest.innerHTML = wordsWithVar[0][0];
     div.appendChild(textRequest);
     br = document.createElement("br");
     div.appendChild(br);
+
     var text = document.createTextNode("Translation not available.");
     div.appendChild(text);
   }
@@ -140,10 +142,21 @@ function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
 //    div.addEventListener("mouseup", function(e) {e.stopPropagation();}, false);
 
   if (results.length > 0) {
-    var span = document.createElement('span');
+    span = document.createElement('span');
     span.style.fontSize = '80%';
     span.style.color = 'grey';
+    span.style.float = 'left';
     span.appendChild(document.createTextNode('Translated from ' + langMap[slang]));
+    div.appendChild(span);
+
+    span = document.createElement('span');
+    span.style.fontSize = '80%';
+    span.style.float = 'right';
+    var a = document.createElement('a');
+    a.title = 'feedback';
+    a.href = 'mailto:liwangd+panlex@gmail.com';
+    a.appendChild(document.createTextNode('feedback'));
+    span.appendChild(a);
     div.appendChild(span);
   }
   document.body.appendChild(div);
@@ -382,15 +395,15 @@ var listener = function (event) {
     //console.log(event.target.toString());
     //console.log(event.currentTarget.toString());
 
-    var lk_div = document.getElementById("panlex_result_div");
-    if (lk_div) {
-      document.body.removeChild(lk_div);
-    }
-
-    var parent_popup = window.parent.document.getElementById("panlex_result_div");
-    if (parent_popup) {
-      window.parent.document.body.removeChild(parent_popup);
-    }
+    //var lk_div = document.getElementById("panlex_result_div");
+    //if (lk_div) {
+    //  document.body.removeChild(lk_div);
+    //}
+    //
+    //var parent_popup = window.parent.document.getElementById("panlex_result_div");
+    //if (parent_popup) {
+    //  window.parent.document.body.removeChild(parent_popup);
+    //}
 
     if (myVar.getVar("triggerKey") === "none" || (myVar.getVar("triggerKey") === "alt" && event.altKey)) {
 
@@ -487,6 +500,18 @@ var listener = function (event) {
 closePopup("panlex_result_div");
 closePopupParent("panlex_result_div");
 document.addEventListener("mouseup", listener, false);
+
+// http://stackoverflow.com/a/7385673/468841
+$(document).mouseup(function (e)
+{
+  var container = $("#panlex_result_div");
+
+  if (!container.is(e.target) // if the target of the click isn't the container...
+    && container.has(e.target).length === 0) // ... nor a descendant of the container
+  {
+    container.hide();
+  }
+});
 
 //document.addEventListener("click", function(){closePopup("panlex_result_div")}, false);
 /*
