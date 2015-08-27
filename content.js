@@ -233,96 +233,6 @@ function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
   });
 }
 
-
-function showResult(request, result_json, x, y) {
-
-  var div = document.createElement("div");
-  div.id = "panlex_result_div";
-  var sy = div.style;
-  sy.position = "absolute";
-  sy.left = x + "px";
-  sy.top = (y + 20) + "px";
-  sy.width = "250px";
-  sy.zIndex = 0xffffffff;
-  sy.background = "#CCE8CF";
-  sy.textAlign = "left";
-  //sy.background-repeat: no-repeat;
-  //sy.border = "1px solid #666";
-  sy.borderColor = "#AEBFB0";
-  sy.borderStyle = "solid";
-  sy.borderWidth = "2px";
-  sy.borderRadius = "4px";
-  sy.padding = "4px";
-
-  /*
-   var oValue = chrome.storage.sync.get('value', function (data) {if (data.value) {window.alert(data.value);}});
-   var optionText = document.createTextNode(oValue);
-   div.appendChild(optionText);
-   */
-
-  var textRequest = document.createElement("b");
-  textRequest.innerHTML = request;
-  div.appendChild(textRequest);
-  var br = document.createElement("br");
-  div.appendChild(br);
-
-  var text;
-  if (JSON.stringify(result_json) != "{}" && result_json["result"].length > 0) {
-    var results = result_json["result"];
-
-    results.sort(compare);
-    var translates = "";
-    for (var oneRst in results) {
-      translates = translates + results[oneRst]["tt"];
-      translates = translates + ", ";
-    }
-    translates = translates.substring(0, translates.length - 2);
-    div.appendChild(document.createTextNode(translates));
-
-  }
-  else if (request.length >= 30) {
-    div.removeChild(div.childNodes[0]);
-    div.removeChild(div.childNodes[0]);
-    text = document.createTextNode("PanLex: Please select shorter text.");
-    div.appendChild(text);
-  }
-  else {
-    text = document.createTextNode("Translation not available.");
-    div.appendChild(text);
-  }
-
-//	div.addEventListener("click", function(e) {e.stopPropagation();}, false);
-//	div.addEventListener("mouseup", function(e) {e.stopPropagation();}, false);
-
-  document.body.appendChild(div);
-
-  // adjust the popup's position to make it always inside the viewport
-  var wW = $(window).width();
-  var wH = $(window).height();
-  var divJQ = $('#panlex_result_div');
-  var divH = divJQ.height();
-  var divW = divJQ.width();
-  var divL = divJQ.position().left - $(window).scrollLeft();
-  var divT = divJQ.position().top - $(window).scrollTop();
-
-  if (divL + divW > wW - 20) {
-    divJQ.css('left', wW - divW - 20);
-  }
-
-  if (divT + divH > wH) {
-    divJQ.css('top', y - 25 - divH);
-  }
-
-  if (request.length >= 30) {
-    setTimeout(function () {
-      var lk_div = document.getElementById("panlex_result_div");
-      if (lk_div) {
-        document.body.removeChild(lk_div);
-      }
-    }, 2000);
-  }
-}
-
 var getOptions = function () {
   chrome.storage.sync.get("language", function (data) {
 
@@ -485,9 +395,6 @@ var listener = function (event) {
           console.log(wordsToTranslate);
           console.log(wordsWithVar);
           ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
-        }
-        else {
-          showResult(request, {}, event.pageX, event.pageY);
         }
       }
     }
