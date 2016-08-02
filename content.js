@@ -3,7 +3,7 @@
  * Li Wang <li@liwang.info>, July 2014
  */
 
-// console.log = function () {};
+console.log = function () {};
 myVar.setVar("flag_auto", false);
 
 function compare(a, b) {
