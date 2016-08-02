@@ -42,7 +42,7 @@ var langid = (function() {
   var num_features = nb_ptc.length / num_langs;
   var num_states = tk_nextmove.length / 256;
 
-  console.log("unpacked a langid model: " + num_langs + " langs, " + num_features + " feats, " + num_states + " states.");
+  // console.log("unpacked a langid model: " + num_langs + " langs, " + num_features + " feats, " + num_states + " states.");
 
   my.textToFv = function(str){
     // convert raw input text to a vector of transitions.

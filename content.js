@@ -3,7 +3,7 @@
  * Li Wang <li@liwang.info>, July 2014
  */
 
-console.log = function () {};
+// console.log = function () {};
 myVar.setVar("flag_auto", false);
 
 function compare(a, b) {
@@ -280,18 +280,32 @@ var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWi
   console.log(JSON.stringify({"uid": [langSrc], "tt": wordsToTranslate}));
   if (event.counter === 0) return;
 
-  chrome.runtime.sendMessage({"langSrc": langSrc, "wordsToTranslate": wordsToTranslate, "langDst": langDst}, function(response) {
-    console.log(response);
-    if (response.error != undefined) {
-      event.counter -= 1;
-      setTimeout(function () {
-          listener(event);
-        },
-        1000
-      );
-    }
-    else {
-      showResultsUnified(wordsWithVar, response.rwordsID, response.responseText, event.pageX, event.pageY, langSrc);
+  var key = langSrc + langDst + wordsWithVar.toString();
+  chrome.storage.local.get('dict', function (data) {
+    if (key in data) {
+      showResultsUnified(wordsWithVar, data[key].rwordsID, data[key].responseText, event.pageX, event.pageY, langSrc);
+    } else {
+      chrome.runtime.sendMessage({
+        "langSrc": langSrc,
+        "wordsToTranslate": wordsToTranslate,
+        "langDst": langDst
+      }, function (response) {
+        console.log(response);
+        if (response.error != undefined) {
+          event.counter -= 1;
+          setTimeout(function () {
+              listener(event);
+            },
+            1000
+          );
+        }
+        else {
+          chrome.storage.local.get('dict', function (data) {
+            data[key] = response;
+          });
+          showResultsUnified(wordsWithVar, response.rwordsID, response.responseText, event.pageX, event.pageY, langSrc);
+        }
+      });
     }
   });
 };
@@ -419,6 +433,10 @@ $(document).mouseup(function (e)
     container.hide();
   }
 });
+
+chrome.storage.local.set({dict:{}});
+
+// console.log(document.body.textContent);
 
 //document.addEventListener("click", function(){closePopup("panlex_result_div")}, false);
 /*

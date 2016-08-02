@@ -39,7 +39,8 @@
   "permissions": [
     "http://api.panlex.org/*",
     "storage",
-    "tabs"
+    "tabs",
+    "unlimitedStorage"
   ],
   "web_accessible_resources": [
     "js/*",
