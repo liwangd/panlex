@@ -3,7 +3,7 @@
  * Li Wang <li@liwang.info>, July 2014-2016
  */
 
-// console.log = function () {};
+console.log = function () {};
 myVar.setVar("flag_auto", false);
 var eng2eng;
 $.getJSON(chrome.extension.getURL('/dicts/eng-000-eng-000.dic'), function(dict) {
@@ -347,7 +347,12 @@ var closePopup = function (popupId) {
 };
 
 var closePopupParent = function (popupId) {
-  var lk_div = window.parent.document.getElementById(popupId);
+  var lk_div;
+  try {
+    lk_div = window.parent.document.getElementById(popupId);
+  } catch (err) {
+    console.log(err.message);
+  }
   if (lk_div) {
     window.parent.document.body.removeChild(lk_div);
   }
