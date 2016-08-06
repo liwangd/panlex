@@ -1,10 +1,14 @@
 /**
  * For license conditions, see the LICENSE file in the same repository.
- * Li Wang <li@liwang.info>, July 2014
+ * Li Wang <li@liwang.info>, July 2014-2016
  */
 
-console.log = function () {};
+// console.log = function () {};
 myVar.setVar("flag_auto", false);
+var eng2eng;
+$.getJSON(chrome.extension.getURL('/dicts/eng-000-eng-000.dic'), function(dict) {
+  eng2eng = dict;
+});
 
 function compare(a, b) {
   if (a['trq'] > b['trq'])
@@ -48,13 +52,7 @@ function appendContent(div, words, wordsID, rstDict, index) {
 
 }
 
-function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
-  var i;
-  closePopup("panlex_result_div");
-  console.log(JSON.stringify(wordsWithVar));
-  console.log(JSON.stringify(wordsID));
-  console.log('x:', x, 'y:', y);
-  var div = document.createElement("div");
+function setPopupStyle(div, x, y) {
   div.id = "panlex_result_div";
   var sy = div.style;
   sy.position = "absolute";
@@ -64,13 +62,89 @@ function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
   sy.zIndex = 0xffffffff;
   sy.background = "#CCE8CF";
   sy.textAlign = "left";
-  //sy.background-repeat: no-repeat;
-  //sy.border = "1px solid #666";
   sy.borderColor = "#AEBFB0";
   sy.borderStyle = "solid";
   sy.borderWidth = "2px";
   sy.borderRadius = "4px";
   sy.padding = "4px";
+}
+
+function showResultsLocal(wordsWithVar, x, y, slang) {
+  // wordsWithVar = wordsWithVar[0];
+  closePopup("panlex_result_div");
+  var div = document.createElement("div");
+  setPopupStyle(div, x, y);
+
+  var translations = {};
+  var i;
+  var word;
+  var trans;
+  for (i = 0; i < wordsWithVar.length; i++) {
+    word = wordsWithVar[i];
+    trans = eng2eng[word];
+    if (trans != undefined && trans.length != undefined && trans.length != 0) {
+      translations[word] = trans;
+    }
+  }
+
+  var br;
+  if (Object.keys(translations).length == 0) {
+    var textRequest = document.createElement("b");
+    textRequest.innerHTML = wordsWithVar[0];
+    div.appendChild(textRequest);
+    br = document.createElement("br");
+    div.appendChild(br);
+
+    var text = document.createTextNode("Translation not available.");
+    div.appendChild(text);
+
+  } else {
+    console.log(JSON.stringify(wordsWithVar.length));
+    for (i = 0; i < wordsWithVar.length; i++) {
+      console.log(JSON.stringify(wordsWithVar));
+      word = wordsWithVar[i];
+      console.log(word);
+      trans = translations[word];
+      if (trans == undefined || trans.length == undefined || trans.length == 0) {
+        continue;
+      }
+
+      textRequest = document.createElement("b");
+      textRequest.innerHTML = word;
+      div.appendChild(textRequest);
+      br = document.createElement("br");
+      div.appendChild(br);
+      var transStr = "";
+      var maxNum = trans.length > 7 ? 7 : trans.length;
+      var j;
+      for (j = 0; j < maxNum; j++) {
+        transStr = transStr + trans[j];
+        transStr = transStr + ", ";
+      }
+      transStr = transStr.substring(0, transStr.length - 2);
+      div.appendChild(document.createTextNode(transStr));
+
+      br = document.createElement("br");
+      div.appendChild(br);
+      br = document.createElement("br");
+      div.appendChild(br);
+    }
+    appendFooter(div, slang);
+  }
+  document.body.appendChild(div);
+  adjustPopupPos(y);
+}
+
+function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
+  var i;
+  closePopup("panlex_result_div");
+  console.log(JSON.stringify(wordsWithVar));
+  console.log(JSON.stringify(wordsID));
+  console.log(JSON.stringify(result_json));
+  console.log('x:', x, 'y:', y);
+  var div = document.createElement("div");
+  setPopupStyle(div, x, y);
+
   console.log('div.style.left: ' + JSON.stringify(div.style.left));
   console.log('div.style.top: ' + JSON.stringify(div.style.top));
 
@@ -142,24 +216,33 @@ function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
 //    div.addEventListener("mouseup", function(e) {e.stopPropagation();}, false);
 
   if (results.length > 0) {
-    span = document.createElement('span');
-    span.style.fontSize = '80%';
-    span.style.color = 'grey';
-    span.style.float = 'left';
-    span.appendChild(document.createTextNode('Translated from ' + langMap[slang]));
-    div.appendChild(span);
-
-    span = document.createElement('span');
-    span.style.fontSize = '80%';
-    span.style.float = 'right';
-    var a = document.createElement('a');
-    a.title = 'feedback';
-    a.href = 'mailto:liwangd+panlex@gmail.com';
-    a.appendChild(document.createTextNode('feedback'));
-    span.appendChild(a);
-    div.appendChild(span);
+    appendFooter(div, slang);
   }
   document.body.appendChild(div);
+  adjustPopupPos();
+}
+
+var appendFooter = function (div, slang) {
+  var span;
+  span = document.createElement('span');
+  span.style.fontSize = '80%';
+  span.style.color = 'grey';
+  span.style.float = 'left';
+  span.appendChild(document.createTextNode('Translated from ' + langMap[slang]));
+  div.appendChild(span);
+
+  span = document.createElement('span');
+  span.style.fontSize = '80%';
+  span.style.float = 'right';
+  var a = document.createElement('a');
+  a.title = 'feedback';
+  a.href = 'mailto:liwangd+panlex@gmail.com';
+  a.appendChild(document.createTextNode('feedback'));
+  span.appendChild(a);
+  div.appendChild(span);
+};
+
+var adjustPopupPos = function (y) {
   // adjust the popup's position to make it always inside the viewport
   var wW = $(window).width();
   var wH = $(window).height();
@@ -173,19 +256,13 @@ function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
     divJQ.css('left', wW - divW - 20);
   }
 
-  //divJQ.css('width', 600);
-
-  //console.log(divT);
-  //console.log(wH);
-
   if (divT + divH > wH) {
     if (divT > wH / 2) {
       divJQ.css('top', y - 25 - divH);
     }
   }
 
-  //console.log(y - 25 - divH);
-
+  var flag;
   if (divT > wH / 2) {
     flag = 1;
     while ((y - $(window).scrollTop() - 25 - divJQ.height()) < 10 && divJQ.width() < wW / 2 && flag === 1) {
@@ -231,7 +308,7 @@ function showResultsUnified(wordsWithVar, wordsID, result_json, x, y, slang) {
   $('a').click(function () {
     closePopup("panlex_result_div");
   });
-}
+};
 
 var getOptions = function () {
   chrome.storage.sync.get("language", function (data) {
@@ -276,14 +353,27 @@ var closePopupParent = function (popupId) {
   }
 };
 
+var localQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig) {
+  if (event.counter === 0) return;
+  chrome.storage.local.get('dict', function (data) {
+    // todo: need to call showResultsLocal in a async manner, this is a hack used to make that happen.
+    showResultsLocal(wordsToTranslate, event.pageX, event.pageY, langSrc);
+    // ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
+  });
+};
+
 var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig) {
   console.log(JSON.stringify({"uid": [langSrc], "tt": wordsToTranslate}));
   if (event.counter === 0) return;
 
   var key = langSrc + langDst + wordsWithVar.toString();
   chrome.storage.local.get('dict', function (data) {
-    if (key in data) {
-      showResultsUnified(wordsWithVar, data[key].rwordsID, data[key].responseText, event.pageX, event.pageY, langSrc);
+    if (data.dict === undefined) {
+      chrome.storage.local.set({'dict':{}});
+    }
+    console.log(JSON.stringify(data));
+    if (key in data.dict) {
+      showResultsUnified(wordsWithVar, data.dict[key].rwordsID, data.dict[key].responseText, event.pageX, event.pageY, langSrc);
     } else {
       chrome.runtime.sendMessage({
         "langSrc": langSrc,
@@ -301,7 +391,9 @@ var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWi
         }
         else {
           chrome.storage.local.get('dict', function (data) {
-            data[key] = response;
+            var dict = data.dict;
+            dict[key] = response;
+            chrome.storage.local.set({'dict': dict});
           });
           showResultsUnified(wordsWithVar, response.rwordsID, response.responseText, event.pageX, event.pageY, langSrc);
         }
@@ -406,14 +498,40 @@ var listener = function (event) {
 
           var langSrc = myVar.getVar("langSrc");
           var langDst = myVar.getVar("langDst");
-          console.log(wordsToTranslate);
-          console.log(wordsWithVar);
-          ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
+          // console.log(wordsToTranslate);
+          // console.log(wordsWithVar);
+
+          wordsToTranslate = cleanWordsToTranslate(wordsToTranslate);
+          if (wordsToTranslate.length == 0) {
+            // if no meaningful words in the list, just return.
+            return;
+          }
+
+          if (langSrc=='eng-000' && langDst=='eng-000') {
+            localQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
+          } else {
+            ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
+          }
         }
       }
     }
   }
 };
+
+function cleanWordsToTranslate(wordsToTranslate) {
+  var filteredWords = [];
+  for (var i = 0; i < wordsToTranslate.length; i++) {
+    var word = wordsToTranslate[i]
+    var s = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()\\\[\]\"\']/g,"");
+    // s = s.replace(/\s{2,}/g," ");
+    s = s.trim();
+    if (s=== "") {
+      continue;
+    }
+    filteredWords.push(word);
+  }
+  return filteredWords;
+}
 
 //document.addEventListener("dblclick", listener, false);
 //document.addEventListener("mouseup", listener, false);
@@ -434,7 +552,7 @@ $(document).mouseup(function (e)
   }
 });
 
-chrome.storage.local.set({dict:{}});
+
 
 // console.log(document.body.textContent);
 
