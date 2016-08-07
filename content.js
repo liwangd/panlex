@@ -5,10 +5,8 @@
 
 console.log = function () {};
 myVar.setVar("flag_auto", false);
+
 var eng2eng;
-$.getJSON(chrome.extension.getURL('/dicts/eng-000-eng-000.dic'), function(dict) {
-  eng2eng = dict;
-});
 
 function compare(a, b) {
   if (a['trq'] > b['trq'])
@@ -360,11 +358,35 @@ var closePopupParent = function (popupId) {
 
 var localQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig) {
   if (event.counter === 0) return;
+
   chrome.storage.local.get('dict', function (data) {
-    // todo: need to call showResultsLocal in a async manner, this is a hack used to make that happen.
-    showResultsLocal(wordsToTranslate, event.pageX, event.pageY, langSrc);
+    if (eng2eng === undefined) {
+      // $.getJSON(chrome.extension.getURL('/dicts/eng-000-eng-000.dic'), function(dict) {
+      //   eng2eng = dict;
+      //   showResultsLocal(wordsToTranslate, event.pageX, event.pageY, langSrc);
+      // });
+
+      chrome.runtime.sendMessage({"messageType": "loadDict"}, function (response) {
+        if (response.error != undefined) {
+          event.counter -= 1;
+          setTimeout(function () {
+              listener(event);
+            },
+            1000
+          );
+        } else {
+          eng2eng = response.eng2eng;
+          showResultsLocal(wordsToTranslate, event.pageX, event.pageY, langSrc);
+        }
+      });
+
+    } else {
+      showResultsLocal(wordsToTranslate, event.pageX, event.pageY, langSrc);
+    }
     // ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
   });
+
+
 };
 
 var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig) {
@@ -381,6 +403,7 @@ var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWi
       showResultsUnified(wordsWithVar, data.dict[key].rwordsID, data.dict[key].responseText, event.pageX, event.pageY, langSrc);
     } else {
       chrome.runtime.sendMessage({
+        "messageType": "remoteDict",
         "langSrc": langSrc,
         "wordsToTranslate": wordsToTranslate,
         "langDst": langDst
