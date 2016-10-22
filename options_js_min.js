@@ -8,6 +8,7 @@
 		a.languageSrc = f.options[f.selectedIndex].value;
 		a.languageDst = g.options[g.selectedIndex].value;
     a.triggerKey = trigger.options[trigger.selectedIndex].value;
+    a.timestamp = Date.now();
 		a.enableHttps = "true";
     //console.log(a);
 //		window.localStorage.options = JSON.stringify(a);
@@ -48,17 +49,19 @@
     
 	r = function(a, b) {
 	    var flag = 0;
-		for (var c = 0, w = a.options.length; c < w; c++)
+		for (var c = 0, w = a.options.length; c < w; c++) {
 			if (a.options[c].value == b) {
 				a.options[c].selected = !0;
 				flag = 1;
 				break
 			}
+		}
 			if (!flag) {
-			    addOpt(a, b);
-			    r(a,b);
+				// todo removed the following line because it was causing troubles to create non-necessary entries, need to figure out the exact cause
+				addOpt(a, b);
+				r(a, b);
 			}
-	}, 
+	},
 	
 	//disable or enable save/reset button
 	p = function(a) {
@@ -82,12 +85,15 @@
 		d.addEventListener("click", q, !1);
 		e.addEventListener("click", u, !1);
 		
-		for (var a = document.getElementsByTagName("input"), b = 0, c; c = a[b]; b++)
+		for (var a = document.getElementsByTagName("input"), b = 0, c; c = a[b]; b++) {
 			c.addEventListener("change", v, !1);
+		}
+
 		a = document.getElementsByTagName("select");
-		for ( b = 0; c = a[b]; b++)
+		for ( b = 0; c = a[b]; b++) {
 			c.addEventListener("change", v, !1);
-		
+		}
+
 	   chrome.storage.sync.get("language", function (data) {
        if (data.language) {
            var langSrc = data.language.languageSrc;

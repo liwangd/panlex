@@ -1,7 +1,7 @@
 /* inspired by the Google Dictionary (by Google) extension from 
  * https://chrome.google.com/webstore/detail/google-dictionary-by-goog/mgijmajocgfcbeboacabfgobmjgjcoja?hl=en*/
 (function() {
-	var save, reset, lsrc, ldst, vsrc, vdst,
+	var save, reset, lsrc, ldst, vsrc, vdst, trigger,
 	
 	getValue = function(lobject) {
         for (var i = 0, length = lobject.length; i < length; i++) {
@@ -42,17 +42,45 @@
        }
     });    
 },
+
+    getOptionTrigger = function() {
+  chrome.storage.sync.get("language", function (data) {
+      if (data.language) {
+        return data.language;
+      } else {
+        return "none";
+      }
+      });
+    },
     
     
 	saveOptions = function() {
         vsrc = getValue(lsrc);
         vdst = getValue(ldst);
-        
-        var a = {};
-        a.languageSrc = vsrc ? vsrc : getOptionSrc;
-        a.languageDst = vdst ? vdst : getOptionDst;
+
+    chrome.storage.sync.get("language", function (data) {
+      var optionSrc;
+      var optionDst;
+      var optionTrigger;
+      if (data.language) {
+        optionSrc = data.language.languageSrc;
+        optionDst = data.language.languageDst;
+        optionTrigger = data.language.triggerKey;
+      } else {
+        optionSrc = "auto-000";
+        optionDst = "eng-000";
+        optionTrigger = "none";
+      }
+             var a = {};
+        a.languageSrc = vsrc ? vsrc : optionSrc;
+        a.languageDst = vdst ? vdst : optionDst;
+        a.triggerKey = optionTrigger;
         a.enableHttps = "true";
+        a.timestamp = Date.now();
         chrome.storage.sync.set({language: a});
+
+    });
+
    
 	    
 	    var b = document.getElementById("save_status_a");
@@ -69,11 +97,12 @@
 
     r = function(a, b) {
         //alert(a.length)
-       for (var c = 0, w = a.length; c < w; c++)
-           if (a[c].value == b) {
-               a[c].checked = !0;
-              break
-           }
+       for (var c = 0, w = a.length; c < w; c++) {
+         if (a[c].value == b) {
+           a[c].checked = !0;
+           break
+         }
+       }
     }, 
 	
 	resetOptions = function() {

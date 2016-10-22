@@ -12,16 +12,33 @@ chrome.runtime.onMessage.addListener(
 
     console.log(request);
     if (request.messageType === "loadDict") {
-      $.getJSON(chrome.extension.getURL('/dicts/eng-000-eng-000.dic'), function (dict) {
-        sendResponse({"eng2eng": dict});
+      var filePath = '/dicts/' + request.langSrc + '_' + request.langDst + '.dic';
+      console.log(filePath);
+      jQuery.ajax({
+        dataType: 'json',
+        url: chrome.extension.getURL(filePath),
+        async: true,
+        success: function (data) {
+          sendResponse({"offlineDict": data});
+        },
+        error: function () {
+          sendResponse({"offlineDict": "nofile"});
+        }
       });
+
+
+      // $.getJSON(chrome.extension.getURL('/dicts/eng-000-eng-000.dic'), function (dict, status, xhr) {
+      //   console.log(status);
+      //   console.log(xhr);
+      //   sendResponse({"eng2eng": dict});
+      // });
     }
     else
       {
       jQuery.ajax({
           type: "POST",
           url: "http://api.panlex.org/ex",
-          data: JSON.stringify({"uid": [request.langSrc], "tt": request.wordsToTranslate}),
+          data: JSON.stringify({"uid": request.langSrc, "tt": request.wordsToTranslate}),
           success: function (responseText, status, xhr) {
             if (xhr["status"] != 200 || status != "success") {
               console.log("API query failed with status: " + JSON.stringify(xhr["status"]) + " and status: " + status);
@@ -36,12 +53,12 @@ chrome.runtime.onMessage.addListener(
               rwordsID[results[i]["tt"]] = results[i]["ex"];
               allIDs.push(results[i]["ex"]);
             }
-            console.log(JSON.stringify({"uid": [request.langDst], "trex": allIDs, "include": ["trq"]}));
+            console.log(JSON.stringify({"uid": request.langDst, "trex": allIDs, "include": "trq"}));
             if (JSON.stringify(results) != "[]") {
               jQuery.ajax({
                 type: "POST",
                 url: "http://api.panlex.org/ex",
-                data: JSON.stringify({"uid": [request.langDst], "trex": allIDs, "include": ["trq"]}),
+                data: JSON.stringify({"uid": request.langDst, "trex": allIDs, "include": "trq", "sort": "trq desc"}),
                 success: function (responseText2, status2, xhr2) {
                   if (xhr2["status"] != 200 || status2 != "success") {
                     console.log("API query failed with status: " + JSON.stringify(xhr2["status"]) + " and status: " + status2);

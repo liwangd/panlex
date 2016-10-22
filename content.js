@@ -6,7 +6,7 @@
 console.log = function () {};
 myVar.setVar("flag_auto", false);
 
-var eng2eng;
+var offlineDict;
 
 function compare(a, b) {
   if (a['trq'] > b['trq'])
@@ -79,7 +79,7 @@ function showResultsLocal(wordsWithVar, x, y, slang) {
   var trans;
   for (i = 0; i < wordsWithVar.length; i++) {
     word = wordsWithVar[i];
-    trans = eng2eng[word];
+    trans = offlineDict[word];
     if (trans != undefined && trans.length != undefined && trans.length != 0) {
       translations[word] = trans;
     }
@@ -315,12 +315,23 @@ var getOptions = function () {
       myVar.setVar("langSrc", data.language.languageSrc);
       myVar.setVar("langDst", data.language.languageDst);
       myVar.setVar("triggerKey", data.language.triggerKey);
+
+      if (myVar.getVar("timestamp") != data.language.timestamp) {
+        offlineDict = undefined;
+        myVar.setVar("timestamp", data.language.timestamp);
+      }
     }
     else {
       myVar.setVar("langSrc", "auto-000");
       myVar.setVar("langDst", "eng-000");
       myVar.setVar("triggerKey", "none");
+      myVar.setVar("timestamp", Date.now());
     }
+
+    console.log("langSrc", myVar.getVar("langSrc"));
+    console.log("langDst", myVar.getVar("langDst"));
+    console.log("offlineDict is undefined?:", offlineDict===undefined);
+    console.log("triggerKey", myVar.getVar("triggerKey"));
   });
 };
 
@@ -359,14 +370,9 @@ var closePopupParent = function (popupId) {
 var localQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig) {
   if (event.counter === 0) return;
 
-  chrome.storage.local.get('dict', function (data) {
-    if (eng2eng === undefined) {
-      // $.getJSON(chrome.extension.getURL('/dicts/eng-000-eng-000.dic'), function(dict) {
-      //   eng2eng = dict;
-      //   showResultsLocal(wordsToTranslate, event.pageX, event.pageY, langSrc);
-      // });
-
-      chrome.runtime.sendMessage({"messageType": "loadDict"}, function (response) {
+  chrome.storage.local.get('dummy', function (data) {
+    if (offlineDict === undefined) {
+      chrome.runtime.sendMessage({"messageType": "loadDict", "langSrc":langSrc, "langDst":langDst}, function (response) {
         if (response.error != undefined) {
           event.counter -= 1;
           setTimeout(function () {
@@ -375,8 +381,13 @@ var localQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWithV
             1000
           );
         } else {
-          eng2eng = response.eng2eng;
+          if (response.offlineDict== "nofile") {
+            console.log("no offline dict file");
+            ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig, data);
+          } else {
+          offlineDict = response.offlineDict;
           showResultsLocal(wordsToTranslate, event.pageX, event.pageY, langSrc);
+          }
         }
       });
 
@@ -385,49 +396,44 @@ var localQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWithV
     }
     // ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
   });
-
-
 };
 
-var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig) {
+var ajaxPostQuery = function (event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig, data) {
   console.log(JSON.stringify({"uid": [langSrc], "tt": wordsToTranslate}));
   if (event.counter === 0) return;
 
+  var dict = data.dict;
   var key = langSrc + langDst + wordsWithVar.toString();
-  chrome.storage.local.get('dict', function (data) {
-    if (data.dict === undefined) {
-      chrome.storage.local.set({'dict':{}});
+    if (dict === undefined) {
+      dict = {};
+      chrome.storage.local.set({'dict':dict});
     }
-    console.log(JSON.stringify(data));
-    if (key in data.dict) {
-      showResultsUnified(wordsWithVar, data.dict[key].rwordsID, data.dict[key].responseText, event.pageX, event.pageY, langSrc);
-    } else {
-      chrome.runtime.sendMessage({
-        "messageType": "remoteDict",
-        "langSrc": langSrc,
-        "wordsToTranslate": wordsToTranslate,
-        "langDst": langDst
-      }, function (response) {
-        console.log(response);
-        if (response.error != undefined) {
-          event.counter -= 1;
-          setTimeout(function () {
-              listener(event);
-            },
-            1000
-          );
-        }
-        else {
-          chrome.storage.local.get('dict', function (data) {
-            var dict = data.dict;
-            dict[key] = response;
-            chrome.storage.local.set({'dict': dict});
-          });
-          showResultsUnified(wordsWithVar, response.rwordsID, response.responseText, event.pageX, event.pageY, langSrc);
-        }
-      });
-    }
-  });
+  //console.log(JSON.stringify(data));
+  if (key in dict) {
+    showResultsUnified(wordsWithVar, data.dict[key].rwordsID, data.dict[key].responseText, event.pageX, event.pageY, langSrc);
+  } else {
+    chrome.runtime.sendMessage({
+      "messageType": "remoteDict",
+      "langSrc": langSrc,
+      "wordsToTranslate": wordsToTranslate,
+      "langDst": langDst
+    }, function (response) {
+      console.log(response);
+      if (response.error != undefined) {
+        event.counter -= 1;
+        setTimeout(function () {
+            listener(event);
+          },
+          1000
+        );
+      }
+      else {
+        dict[key] = response;
+        chrome.storage.local.set({'dict': dict});
+        showResultsUnified(wordsWithVar, response.rwordsID, response.responseText, event.pageX, event.pageY, langSrc);
+      }
+    });
+  }
 };
 
 var listener = function (event) {
@@ -535,13 +541,15 @@ var listener = function (event) {
             return;
           }
 
-          if (langSrc=='eng-000' && langDst=='eng-000') {
-            localQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
-          } else {
-            ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
-          }
+          // if (langSrc=='eng-000' && langDst=='eng-000') {
+          localQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
+          // } else {
+          //   ajaxPostQuery(event, langSrc, langDst, wordsToTranslate, wordsWithVar, request, requestOrig);
+          // }
         }
       }
+    } else {
+      console.log("trigger key is not set properly");
     }
   }
 };
@@ -549,7 +557,7 @@ var listener = function (event) {
 function cleanWordsToTranslate(wordsToTranslate) {
   var filteredWords = [];
   for (var i = 0; i < wordsToTranslate.length; i++) {
-    var word = wordsToTranslate[i]
+    var word = wordsToTranslate[i];
     var s = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()\\\[\]\"\']/g,"");
     // s = s.replace(/\s{2,}/g," ");
     s = s.trim();
@@ -561,12 +569,25 @@ function cleanWordsToTranslate(wordsToTranslate) {
   return filteredWords;
 }
 
+function getHostName(url) {
+  var match = url.match(/:\/\/(www[0-9]?\.)?(.[^/:]+)/i);
+  if (match != null && match.length > 2 && typeof match[2] === 'string' && match[2].length > 0) {
+    return match[2];
+  }
+  else {
+    return null;
+  }
+}
+
 //document.addEventListener("dblclick", listener, false);
 //document.addEventListener("mouseup", listener, false);
 
 closePopup("panlex_result_div");
 closePopupParent("panlex_result_div");
-document.addEventListener("mouseup", listener, false);
+
+if (getHostName(document.URL) != "mail.google.com") {
+  document.addEventListener("mouseup", listener, false);
+}
 
 // http://stackoverflow.com/a/7385673/468841
 $(document).mouseup(function (e)
@@ -580,6 +601,19 @@ $(document).mouseup(function (e)
   }
 });
 
+// load dictionary at start
+// chrome.runtime.sendMessage({"messageType": "loadDict"}, function (response) {
+//   if (response.error != undefined) {
+//     event.counter -= 1;
+//     setTimeout(function () {
+//         listener(event);
+//       },
+//       1000
+//     );
+//   } else {
+//     offlineDict = response.eng2eng;
+//   }
+// });
 
 
 // console.log(document.body.textContent);
